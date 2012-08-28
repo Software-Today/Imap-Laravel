@@ -20,11 +20,11 @@ class Mailbox implements \IteratorAggregate
      * @param string   $name   Mailbox name
      * @param resource $stream PHP IMAP resource
      */
-    public function __construct($mailbox, $stream)
+    public function __construct($name, $stream)
     {
-        $this->mailbox = $mailbox;
+        $this->mailbox = $name;
         $this->stream = $stream;
-        $this->name = substr($mailbox, strpos($mailbox, '}')+1);
+        $this->name = substr($name, strpos($name, '}')+1);
     }
 
     /**
@@ -45,6 +45,7 @@ class Mailbox implements \IteratorAggregate
     public function count()
     {
         $this->init();
+
         return \imap_num_msg($this->stream);
     }
 
@@ -74,6 +75,10 @@ class Mailbox implements \IteratorAggregate
 
         $queryString = implode(' ', $query);
         $messageNumbers = \imap_search($this->stream, $queryString);
+        if (false == $messageNumbers) {
+            // \imap_search can also return false
+            $messageNumbers = array();
+        }
 
         return new MessageIterator($this->stream, $messageNumbers);
     }
@@ -104,6 +109,9 @@ class Mailbox implements \IteratorAggregate
         return $this->getMessages();
     }
 
+    /**
+     * If connection is not currently in this mailbox, switch it to this mailbox
+     */
     protected function init()
     {
         $check = \imap_check($this->stream);

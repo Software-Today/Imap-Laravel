@@ -2,8 +2,6 @@
 
 namespace Ddeboer\Imap\Message;
 
-use Ddeboer\Headers\Mail\MailHeaders;
-
 class Headers
 {
     protected $array = array();
@@ -34,13 +32,17 @@ class Headers
 
         if (isset($this->array['from'])) {
             $from = current($this->array['from']);
-            $this->array['from'] = new EmailAddress($from->mailbox, $from->host, $from->personal);
+            $this->array['from'] = new EmailAddress($from->mailbox, $from->host, \imap_utf8($from->personal));
         }
 
         if (isset($this->array['to'])) {
             $recipients = array();
             foreach ($this->array['to'] as $to) {
-                $recipients[] = new EmailAddress($to->mailbox, $to->host, $to->personal);
+                $recipients[] = new EmailAddress(
+                    str_replace('\'', '', $to->mailbox),
+                    str_replace('\'', '', $to->host),
+                    \imap_utf8($to->personal)
+                );
             }
             $this->array['to'] = $recipients;
         } else {
