@@ -2,8 +2,6 @@
 
 namespace Ddeboer\Imap;
 
-use Ddeboer\Imap\Message\EmailAddress;
-
 /**
  * An IMAP message (e-mail)
  */
