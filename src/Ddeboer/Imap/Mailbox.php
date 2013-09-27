@@ -10,7 +10,6 @@ use Ddeboer\Imap\Search\DateRange;
  */
 class Mailbox implements \IteratorAggregate
 {
-    protected $mailbox;
     protected $name;
     protected $stream;
     protected $messageIds;
@@ -93,6 +92,18 @@ class Mailbox implements \IteratorAggregate
         $this->init();
 
         return $this->getMessages();
+    }
+
+    /**
+     * Delete all messages marked for deletion
+     *
+     * @return boolean
+     */
+    public function expunge()
+    {
+        $this->init();
+
+        return \imap_expunge($this->stream);
     }
 
     /**
