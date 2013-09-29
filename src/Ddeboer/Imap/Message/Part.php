@@ -87,7 +87,8 @@ class Part implements \RecursiveIterator
         $this->stream = $stream;
         $this->messageNumber = $messageNumber;
         $this->partNumber = $partNumber;
-        $this->structure = $this->parseStructure($structure);
+        $this->structure = $structure;
+        $this->parseStructure($structure);
     }
 
     public function getCharset()
@@ -136,7 +137,7 @@ class Part implements \RecursiveIterator
             $this->content = \imap_fetchbody(
                 $this->stream,
                 $this->messageNumber,
-                $this->partNumber
+                $this->partNumber ?: 1
             );
         }
 
