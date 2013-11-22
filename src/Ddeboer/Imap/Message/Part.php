@@ -238,7 +238,8 @@ class Part implements \RecursiveIterator
                 }
 
                 if (isset($partStructure->disposition)
-                    && strtolower($partStructure->disposition) == 'attachment') {
+                    && (strtolower($partStructure->disposition) == 'attachment' || strtolower($partStructure->disposition) == 'inline' )
+                    && strtoupper ($partStructure->subtype) != "PLAIN") {
                     $attachment = new Attachment($this->stream, $this->messageNumber, $partNumber, $partStructure);
                     $this->parts[] = $attachment;
                 } else {
@@ -251,7 +252,7 @@ class Part implements \RecursiveIterator
     /**
      * Get an array of all parts for this message
      *
-     * @return Message\Part[]
+     * @return self[]
      */
     public function getParts()
     {
