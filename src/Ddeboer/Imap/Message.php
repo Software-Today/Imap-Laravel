@@ -248,13 +248,15 @@ class Message extends Message\Part
 
     /**
      * Delete message
+     *
+     * @throws MessageDeleteException
      */
     public function delete()
     {
         // 'deleted' header changed, force to reload headers, would be better to set deleted flag to true on header
         $this->headers = null;
 
-        if (!\imap_delete($this->stream, $this->messageNumber)) {
+        if (!\imap_delete($this->stream, $this->messageNumber, \FT_UID)) {
             throw new MessageDeleteException($this->messageNumber);
         }
     }
