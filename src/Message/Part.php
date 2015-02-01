@@ -2,8 +2,8 @@
 
 namespace Ddeboer\Imap\Message;
 
-use Ddeboer\Imap\Parameters;
 use Ddeboer\Transcoder\Transcoder;
+use Doctrine\Common\Collections\ArrayCollection;
 
 /**
  * A message part
@@ -61,7 +61,7 @@ class Part implements \RecursiveIterator
     protected $lines;
 
     /**
-     * @var Parameters
+     * @var ArrayCollection
      */
     protected $parameters;
     
@@ -230,14 +230,16 @@ class Part implements \RecursiveIterator
                 $this->$optional = $structure->$optional;
             }
         }
-        
-        $this->parameters = new Parameters();
-        if (is_array($structure->parameters)) {
-            $this->parameters->add($structure->parameters);
+
+        $this->parameters = new ArrayCollection();
+        foreach ($structure->parameters as $parameter) {
+            $this->parameters->set(strtolower($parameter->attribute), $parameter->value);
         }
-        
+
         if (isset($structure->dparameters)) {
-            $this->parameters->add($structure->dparameters);
+            foreach ($structure->dparameters as $parameter) {
+                $this->parameters->set(strtolower($parameter->attribute), $parameter->value);
+            }
         }
 
         if (isset($structure->parts)) {
@@ -248,8 +250,13 @@ class Part implements \RecursiveIterator
                     $partNumber = (string) ($this->partNumber . '.' . ($key+1));
                 }
 
-                if ($this->isAttachment($partStructure)) {
-                    $this->parts[] = new Attachment($this->stream, $this->messageNumber, $partNumber, $partStructure);
+                if (isset($partStructure->disposition)
+                    && (strtolower($partStructure->disposition) == 'attachment'
+                        || strtolower($partStructure->disposition) == 'inline')
+                    && strtoupper($partStructure->subtype) != "PLAIN"
+                ) {
+                    $attachment = new Attachment($this->stream, $this->messageNumber, $partNumber, $partStructure);
+                    $this->parts[] = $attachment;
                 } else {
                     $this->parts[] = new Part($this->stream, $this->messageNumber, $partNumber, $partStructure);
                 }
@@ -324,31 +331,5 @@ class Part implements \RecursiveIterator
             $this->partNumber ?: 1,
             \FT_UID | ($keepUnseen ? \FT_PEEK : null)
         );
-    }
-    
-    private function isAttachment($part)
-    {
-        // Attachment with correct Content-Disposition header
-        if (isset($part->disposition)) {
-            if (('attachment' === strtolower($part->disposition)
-                || 'inline' === strtolower($part->disposition))
-            && strtoupper($part->subtype) != "PLAIN"
-            ) {
-                return true;
-            }
-        }
-
-        // Attachment without Content-Disposition header
-        if (isset($part->parameters)) {
-            foreach ($part->parameters as $parameter) {
-                if ('name' === strtolower($parameter->attribute)
-                    || 'filename' === strtolower($parameter->attribute)
-                ) {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
     }
 }
