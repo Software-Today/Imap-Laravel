@@ -50,18 +50,6 @@ class Connection
     }
 
     /**
-     * Check that a mailbox with the given name exists
-     *
-     * @param string $name Mailbox name
-     *
-     * @return bool
-     */
-    public function hasMailbox($name)
-    {
-        return in_array($name, $this->getMailboxNames());
-    }
-
-    /**
      * Get a mailbox by its name
      *
      * @param string $name Mailbox name
@@ -71,7 +59,7 @@ class Connection
      */
     public function getMailbox($name)
     {
-        if (!$this->hasMailbox($name)) {
+        if (!in_array($name, $this->getMailboxNames())) {
             throw new MailboxDoesNotExistException($name);
         }
 
