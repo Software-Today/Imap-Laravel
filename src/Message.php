@@ -111,13 +111,13 @@ class Message extends Message\Part
      *
      * @return string
      */
-    public function getContent()
+    public function getContent($keepUnseen = false)
     {
         // Null headers, so subsequent calls to getHeaders() will return
         // updated seen flag
         $this->headers = null;
 
-        return $this->doGetContent($this->keepUnseen);
+        return $this->doGetContent($this->keepUnseen ? $this->keepUnseen : $keepUnseen);
     }
 
     /**
@@ -198,7 +198,7 @@ class Message extends Message\Part
         $iterator = new \RecursiveIteratorIterator($this, \RecursiveIteratorIterator::SELF_FIRST);
         foreach ($iterator as $part) {
             if ($part->getSubtype() == 'HTML') {
-                return $part->getDecodedContent();
+                return $part->getDecodedContent($this->keepUnseen);
             }
         }
     }
@@ -213,12 +213,12 @@ class Message extends Message\Part
         $iterator = new \RecursiveIteratorIterator($this, \RecursiveIteratorIterator::SELF_FIRST);
         foreach ($iterator as $part) {
             if ($part->getSubtype() == 'PLAIN') {
-                return $part->getDecodedContent();
+                return $part->getDecodedContent($this->keepUnseen);
             }
         }
 
         // If message has no parts, return content of message itself.
-        return $this->getDecodedContent();
+        return $this->getDecodedContent($this->keepUnseen);
     }
 
     /**
@@ -250,7 +250,7 @@ class Message extends Message\Part
     /**
      * Does this message have attachments?
      *
-     * @return bool
+     * @return int
      */
     public function hasAttachments()
     {
@@ -291,7 +291,7 @@ class Message extends Message\Part
     /**
      * Prevent the message from being marked as seen
      *
-     * Defaults to true, so messages that are read will be still marked as unseen.
+     * Defaults to false, so messages that are read will be marked as seen.
      *
      * @param bool $bool
      *
@@ -317,15 +317,15 @@ class Message extends Message\Part
                 );
             }
         );
-        
+
         $structure = imap_fetchstructure(
             $this->stream,
             $this->messageNumber,
             \FT_UID
         );
-        
+
         restore_error_handler();
-        
+
         $this->parseStructure($structure);
     }
 }

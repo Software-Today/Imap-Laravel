@@ -6,7 +6,7 @@ namespace Ddeboer\Imap;
  * An IMAP mailbox (commonly referred to as a ‘folder’)
  *
  */
-class Mailbox implements \Countable, \IteratorAggregate
+class Mailbox implements \IteratorAggregate
 {
     private $mailbox;
     private $name;
