@@ -201,6 +201,13 @@ class Message extends Message\Part
                 return $part->getDecodedContent($this->keepUnseen);
             }
         }
+
+        // If message has no parts and is HTML, return content of message itself.
+        if ($this->getSubtype() == 'HTML') {
+            return $this->getDecodedContent($this->keepUnseen);
+        }
+
+        return null;
     }
 
     /**
@@ -218,7 +225,11 @@ class Message extends Message\Part
         }
 
         // If message has no parts, return content of message itself.
-        return $this->getDecodedContent($this->keepUnseen);
+        if ($this->getSubtype() != 'HTML') {
+            return $this->getDecodedContent($this->keepUnseen);
+        }
+
+        return null;
     }
 
     /**
@@ -250,7 +261,7 @@ class Message extends Message\Part
     /**
      * Does this message have attachments?
      *
-     * @return int
+     * @return bool
      */
     public function hasAttachments()
     {
@@ -291,7 +302,7 @@ class Message extends Message\Part
     /**
      * Prevent the message from being marked as seen
      *
-     * Defaults to false, so messages that are read will be marked as seen.
+     * Defaults to true, so messages that are read will be still marked as unseen.
      *
      * @param bool $bool
      *
