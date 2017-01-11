@@ -77,6 +77,16 @@ class Message extends Message\Part
     }
 
     /**
+     * Get Bcc recipients
+     *
+     * @return EmailAddress[] Empty array in case message has no Bcc: recipients
+     */
+    public function getBcc()
+    {
+        return $this->getHeaders()->get('bcc') ?: [];
+    }
+
+    /**
      * Get message number (from headers)
      *
      * @return int
@@ -201,13 +211,6 @@ class Message extends Message\Part
                 return $part->getDecodedContent($this->keepUnseen);
             }
         }
-
-        // If message has no parts and is HTML, return content of message itself.
-        if ($this->getSubtype() == 'HTML') {
-            return $this->getDecodedContent($this->keepUnseen);
-        }
-
-        return null;
     }
 
     /**
@@ -225,11 +228,7 @@ class Message extends Message\Part
         }
 
         // If message has no parts, return content of message itself.
-        if ($this->getSubtype() != 'HTML') {
-            return $this->getDecodedContent($this->keepUnseen);
-        }
-
-        return null;
+        return $this->getDecodedContent($this->keepUnseen);
     }
 
     /**
