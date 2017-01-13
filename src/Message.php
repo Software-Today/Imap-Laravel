@@ -77,16 +77,6 @@ class Message extends Message\Part
     }
 
     /**
-     * Get Bcc recipients
-     *
-     * @return EmailAddress[] Empty array in case message has no Bcc: recipients
-     */
-    public function getBcc()
-    {
-        return $this->getHeaders()->get('bcc') ?: [];
-    }
-
-    /**
      * Get message number (from headers)
      *
      * @return int
@@ -312,6 +302,17 @@ class Message extends Message\Part
         $this->keepUnseen = (bool) $bool;
 
         return $this;
+    }
+    
+    
+    /**
+     * Get the raw message, including all headers, parts, etc. unencoded and unparsed.
+     * 
+     * @return string The raw message.
+     */
+    public function getRaw()
+    {
+        return imap_fetchbody($this->stream, imap_msgno($this->stream, $this->messageNumber), "");
     }
 
     /**
