@@ -77,6 +77,16 @@ class Message extends Message\Part
     }
 
     /**
+     * Get Bcc recipients
+     *
+     * @return EmailAddress[] Empty array in case message has no Bcc: recipients
+     */
+    public function getBcc()
+    {
+        return $this->getHeaders()->get('bcc') ?: [];
+    }
+
+    /**
      * Get message number (from headers)
      *
      * @return int
@@ -303,16 +313,6 @@ class Message extends Message\Part
 
         return $this;
     }
-    
-    /**
-     * Get the raw message, including all headers, parts, etc. unencoded and unparsed.
-     * 
-     * @return string The raw message.
-     */
-    public function getRaw()
-    {
-        return imap_fetchbody($this->stream, imap_msgno($this->stream, $this->messageNumber), "");
-    }
 
     /**
      * Load message structure
@@ -337,5 +337,27 @@ class Message extends Message\Part
         restore_error_handler();
 
         $this->parseStructure($structure);
+    }
+
+    /**
+     * Set Flag Message
+     * @param [type] $messageNumber [description]
+     * @param [type] $flag         \Seen, \Answered, \Flagged, \Deleted, and \Draft
+     * @return bool                [description]
+     */
+    public function setFlag($messageNumber, $flag)
+    {
+      return imap_setflag_full($this->stream, $messageNumber, $flag, ST_UID);
+    }
+
+    /**
+     * Clear Flag Message
+     * @param  [type] $messageNumber [description]
+     * @param [type] $flag         \Seen, \Answered, \Flagged, \Deleted, and \Draft
+     * @return bool                [description]
+     */
+    public function clearFlag($messageNumber, $flag)
+    {
+      return imap_clearflag_full($this->stream, $messageNumber, $flag, ST_UID);
     }
 }
