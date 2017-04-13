@@ -12,7 +12,6 @@ use Ddeboer\Imap\Exception\MessageMoveException;
  */
 class Message extends Message\Part
 {
-    private $headersRaw;
     private $headers;
     private $attachments;
 
@@ -78,16 +77,6 @@ class Message extends Message\Part
     }
 
     /**
-     * Get Bcc recipients
-     *
-     * @return EmailAddress[] Empty array in case message has no Bcc: recipients
-     */
-    public function getBcc()
-    {
-        return $this->getHeaders()->get('bcc') ?: [];
-    }
-
-    /**
      * Get message number (from headers)
      *
      * @return int
@@ -104,12 +93,7 @@ class Message extends Message\Part
      */
     public function getDate()
     {
-      $date = $this->getHeaders()->get('date');
-      if(!$date){
-        $udate = new \DateTime();
-        $date = $udate->setTimestamp($this->getHeaders()->get('udate'));
-      }
-      return $date;
+        return $this->getHeaders()->get('date');
     }
 
     /**
@@ -205,17 +189,13 @@ class Message extends Message\Part
     }
 
     /**
-     * Get message headers Raw
+     * Get message string headers
      *
      * @return string
      */
-    public function getHeadersRaw()
+    public function getStringHeaders()
     {
-        if (null === $this->headersRaw) {
-            $this->headersRaw = imap_fetchheader($this->stream, imap_msgno($this->stream, $this->messageNumber));
-        }
-
-        return $this->headersRaw;
+        return imap_fetchheader($this->stream, imap_msgno($this->stream, $this->messageNumber));
     }
 
     /**
@@ -357,25 +337,5 @@ class Message extends Message\Part
         restore_error_handler();
 
         $this->parseStructure($structure);
-    }
-
-    /**
-     * Set Flag Message
-     * @param [type] $flag         \Seen, \Answered, \Flagged, \Deleted, and \Draft
-     * @return bool                [description]
-     */
-    public function setFlag($flag)
-    {
-      return imap_setflag_full($this->stream, $this->messageNumber, $flag, ST_UID);
-    }
-
-    /**
-     * Clear Flag Message
-     * @param [type] $flag         \Seen, \Answered, \Flagged, \Deleted, and \Draft
-     * @return bool                [description]
-     */
-    public function clearFlag($flag)
-    {
-      return imap_clearflag_full($this->stream, $this->messageNumber, $flag, ST_UID);
     }
 }
