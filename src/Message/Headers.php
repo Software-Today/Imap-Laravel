@@ -48,7 +48,7 @@ class Headers extends Parameters
             case 'draft':
                 // no break
             case 'unseen':
-                return $value;
+                return (bool)trim($value);
             case 'date':
                 $value = $this->decode($value);
                 $value = preg_replace('/([^\(]*)\(.*\)/', '$1', $value);
