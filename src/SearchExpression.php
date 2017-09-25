@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap;
 
 use Ddeboer\Imap\Search\AbstractCondition;
@@ -16,12 +14,12 @@ class SearchExpression
      *
      * @var array
      */
-    private $conditions = [];
+    private $conditions = array();
 
     /**
      * Adds a new condition to the expression.
      *
-     * @param AbstractCondition $condition the condition to be added
+     * @param  AbstractCondition $condition The condition to be added.
      *
      * @return SearchExpression
      */

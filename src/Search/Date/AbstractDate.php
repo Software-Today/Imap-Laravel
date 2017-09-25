@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap\Search\Date;
 
 use DateTime;
@@ -29,7 +27,7 @@ abstract class AbstractDate extends AbstractCondition
     /**
      * Constructor.
      *
-     * @param DateTime $date optional date for the condition
+     * @param DateTime $date Optional date for the condition.
      */
     public function __construct(DateTime $date = null)
     {
@@ -55,6 +53,6 @@ abstract class AbstractDate extends AbstractCondition
      */
     public function __toString()
     {
-        return $this->getKeyword() . ' "' . $this->date->format(self::DATE_FORMAT) . '"';
+        return $this->getKeyword() . ' "' . $this->date->format(self::DATE_FORMAT) .'"';
     }
 }

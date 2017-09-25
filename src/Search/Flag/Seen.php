@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap\Search\Flag;
 
 use Ddeboer\Imap\Search\AbstractCondition;

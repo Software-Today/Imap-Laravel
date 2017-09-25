@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap;
 
 use Ddeboer\Imap\Exception\AuthenticationFailedException;
@@ -40,7 +38,7 @@ class Server
      * Constructor
      *
      * @param string $hostname   Internet domain name or bracketed IP address
-     *                           of server
+        *                        of server
      * @param int    $port       TCP port number
      * @param string $flags      Optional flags
      * @param array  $parameters Connection parameters
@@ -49,12 +47,12 @@ class Server
         $hostname,
         $port = 993,
         $flags = '/imap/ssl/validate-cert',
-        $parameters = []
+        $parameters = array()
     ) {
         if (!function_exists('imap_open')) {
             throw new \RuntimeException('IMAP extension must be enabled');
         }
-
+        
         $this->hostname = $hostname;
         $this->port = $port;
         $this->flags = $flags ? '/' . ltrim($flags, '/') : '';
@@ -67,9 +65,8 @@ class Server
      * @param string $username Username
      * @param string $password Password
      *
-     * @throws AuthenticationFailedException
-     *
      * @return Connection
+     * @throws AuthenticationFailedException
      */
     public function authenticate($username, $password)
     {
@@ -79,12 +76,12 @@ class Server
                 throw new AuthenticationFailedException($username, $message);
             }
         );
-
+        
         $resource = imap_open(
             $this->getServerString(),
             $username,
             $password,
-            0,
+            null,
             1,
             $this->parameters
         );
@@ -92,12 +89,12 @@ class Server
         if (false === $resource) {
             throw new AuthenticationFailedException($username);
         }
-
+        
         restore_error_handler();
 
         $check = imap_check($resource);
         $mailbox = $check->Mailbox;
-        $this->connection = substr($mailbox, 0, strpos($mailbox, '}') + 1);
+        $this->connection = substr($mailbox, 0, strpos($mailbox, '}')+1);
 
         // These are necessary to get rid of PHP throwing IMAP errors
         imap_errors();

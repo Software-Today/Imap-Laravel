@@ -1,31 +1,79 @@
 <?php
-
-declare(strict_types=1);
-
 namespace Ddeboer\Imap\Tests;
 
+use Ddeboer\Imap\Exception\MailboxDoesNotExistException;
 use Ddeboer\Imap\Mailbox;
 use Ddeboer\Imap\Server;
-use PHPUnit_Framework_TestCase;
+use Ddeboer\Imap\Connection;
 
-abstract class AbstractTest extends PHPUnit_Framework_TestCase
+abstract class AbstractTest extends \PHPUnit_Framework_TestCase
 {
-    protected function getConnection()
+    protected static $connection;
+
+    public static function setUpBeforeClass()
     {
-        static $connection;
-        if (null === $connection) {
-            $server = new Server(\getenv('IMAP_SERVER_NAME'), \getenv('IMAP_SERVER_PORT'), '/imap/ssl/novalidate-cert');
-            $connection = $server->authenticate(\getenv('IMAP_USERNAME'), \getenv('IMAP_PASSWORD'));
+        $server = new Server('imap.gmail.com');
+
+        if (false === \getenv('EMAIL_USERNAME')) {
+            throw new \RuntimeException(
+                'Please set environment variable EMAIL_USERNAME before running functional tests'
+            );
         }
 
-        return $connection;
+        if (false === \getenv('EMAIL_PASSWORD')) {
+            throw new \RuntimeException(
+                'Please set environment variable EMAIL_PASSWORD before running functional tests'
+            );
+        }
+
+        static::$connection = $server->authenticate(\getenv('EMAIL_USERNAME'), \getenv('EMAIL_PASSWORD'));
     }
 
-    protected function createMailbox()
+    /**
+     * @return Connection
+     */
+    protected static function getConnection()
     {
-        $this->mailboxName = uniqid('mailbox_');
+        return static::$connection;
+    }
 
-        return $this->getConnection()->createMailbox($this->mailboxName);
+    /**
+     * Create a mailbox
+     *
+     * If the mailbox already exists, it will be deleted first
+     *
+     * @param string $name Mailbox name
+     *
+     * @return Mailbox
+     */
+    protected function createMailbox($name)
+    {
+        $uniqueName = $name . uniqid();
+
+        try {
+            $mailbox = static::getConnection()->getMailbox($uniqueName);
+            $this->deleteMailbox($mailbox);
+        } catch (MailboxDoesNotExistException $e) {
+            // Ignore mailbox not found
+        }
+
+        return static::getConnection()->createMailbox($uniqueName);
+    }
+
+    /**
+     * Delete a mailbox and all its messages
+     *
+     * @param Mailbox $mailbox
+     */
+    protected function deleteMailbox(Mailbox $mailbox)
+    {
+        // Move all messages in the mailbox to Gmail trash
+        $trash = self::getConnection()->getMailbox('[Gmail]/Bin');
+
+        foreach ($mailbox->getMessages() as $message) {
+            $message->move($trash);
+        }
+        $mailbox->delete();
     }
 
     protected function createTestMessage(
@@ -43,7 +91,7 @@ abstract class AbstractTest extends PHPUnit_Framework_TestCase
 
         $mailbox->addMessage($message);
     }
-
+    
     protected function getFixture($fixture)
     {
         return file_get_contents(__DIR__ . '/fixtures/' . $fixture);

@@ -1,14 +1,12 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap\Exception;
 
 class Exception extends \RuntimeException
 {
-    protected $errors = [];
+    protected $errors = array();
 
-    public function __construct($message, $code = 0, $previous = null)
+    public function __construct($message, $code = null, $previous = null)
     {
         parent::__construct($message, $code, $previous);
         $this->errors = imap_errors();

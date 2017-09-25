@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap\Tests;
 
 use Ddeboer\Imap\Mailbox;
@@ -18,23 +16,28 @@ class MailboxTest extends AbstractTest
 
     public function setUp()
     {
-        $this->mailbox = $this->createMailbox();
+        $this->mailbox = $this->createMailbox('test-mailbox');
 
         $this->createTestMessage($this->mailbox, 'Message 1');
         $this->createTestMessage($this->mailbox, 'Message 2');
         $this->createTestMessage($this->mailbox, 'Message 3');
     }
 
+    public function tearDown()
+    {
+        $this->deleteMailbox($this->mailbox);
+    }
+
     public function testGetName()
     {
-        $this->assertSame($this->mailboxName, $this->mailbox->getName());
+        $this->assertStringStartsWith('test-mailbox', $this->mailbox->getName());
     }
 
     public function testGetMessages()
     {
         $i = 0;
         foreach ($this->mailbox->getMessages() as $message) {
-            ++$i;
+            $i++;
         }
 
         $this->assertEquals(3, $i);
@@ -57,17 +60,17 @@ class MailboxTest extends AbstractTest
     public function testSearch()
     {
         $this->createTestMessage($this->mailbox, 'Result', 'Contents');
-
+        
         $search = new SearchExpression();
         $search->addCondition(new To('me@here.com'))
             ->addCondition(new Body('Contents'))
         ;
-
+        
         $messages = $this->mailbox->getMessages($search);
         $this->assertCount(1, $messages);
         $this->assertEquals('Result', $messages->current()->getSubject());
     }
-
+    
     public function testSearchNoResults()
     {
         $search = new SearchExpression();
