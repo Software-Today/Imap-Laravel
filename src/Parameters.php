@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ddeboer\Imap;
 
 use Ddeboer\Transcoder\Transcoder;
@@ -7,12 +9,12 @@ use Ddeboer\Transcoder\Transcoder;
 class Parameters
 {
     protected $parameters = [];
-    
+
     public function __construct(array $parameters = [])
     {
         $this->add($parameters);
     }
-    
+
     public function add(array $parameters = [])
     {
         foreach ($parameters as $parameter) {
@@ -21,26 +23,27 @@ class Parameters
             $this->parameters[$key] = $value;
         }
     }
-    
+
     public function get($key)
     {
         if (isset($this->parameters[$key])) {
             return $this->parameters[$key];
         }
-        
-        return null;
+
+        return;
     }
-    
+
     protected function decode($value)
     {
         $decoded = '';
         $parts = imap_mime_header_decode($value);
         foreach ($parts as $part) {
-            $charset = 'default' == $part->charset ? 'auto' : $part->charset;
+            // $charset = 'default' == $part->charset ? 'auto' : $part->charset;
             // imap_utf8 doesn't seem to work properly, so use Transcoder instead
-            $decoded .= Transcoder::create()->transcode($part->text, $charset);
+            // $decoded .= Transcoder::create()->transcode($part->text, $charset);
+            $decoded .= $part->text;
         }
-        
+
         return $decoded;
     }
 }

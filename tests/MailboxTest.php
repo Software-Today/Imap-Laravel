@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ddeboer\Imap\Tests;
 
+use Ddeboer\Imap\Exception;
 use Ddeboer\Imap\Mailbox;
 use Ddeboer\Imap\Search\Email\To;
 use Ddeboer\Imap\Search\Text\Body;
@@ -16,40 +19,34 @@ class MailboxTest extends AbstractTest
 
     public function setUp()
     {
-        $this->mailbox = $this->createMailbox('test-mailbox');
+        $this->mailbox = $this->createMailbox();
 
         $this->createTestMessage($this->mailbox, 'Message 1');
         $this->createTestMessage($this->mailbox, 'Message 2');
         $this->createTestMessage($this->mailbox, 'Message 3');
     }
 
-    public function tearDown()
-    {
-        $this->deleteMailbox($this->mailbox);
-    }
-
     public function testGetName()
     {
-        $this->assertStringStartsWith('test-mailbox', $this->mailbox->getName());
+        $this->assertSame($this->mailboxName, $this->mailbox->getName());
     }
 
     public function testGetMessages()
     {
         $i = 0;
         foreach ($this->mailbox->getMessages() as $message) {
-            $i++;
+            ++$i;
         }
 
         $this->assertEquals(3, $i);
     }
 
-    /**
-     * @expectedException \Ddeboer\Imap\Exception\MessageDoesNotExistException
-     * @expectedExceptionMessageRegExp /Message 666 does not exist.*Bad message number/
-     */
     public function testGetMessageThrowsException()
     {
-        $this->mailbox->getMessage(666);
+        $this->expectException(Exception\MessageDoesNotExistException::class);
+        $this->expectExceptionMessageRegExp('/E_WARNING.+Message 999 does not exist.+Bad message number/s');
+
+        $this->mailbox->getMessage(999);
     }
 
     public function testCount()
@@ -60,17 +57,17 @@ class MailboxTest extends AbstractTest
     public function testSearch()
     {
         $this->createTestMessage($this->mailbox, 'Result', 'Contents');
-        
+
         $search = new SearchExpression();
         $search->addCondition(new To('me@here.com'))
             ->addCondition(new Body('Contents'))
         ;
-        
+
         $messages = $this->mailbox->getMessages($search);
         $this->assertCount(1, $messages);
         $this->assertEquals('Result', $messages->current()->getSubject());
     }
-    
+
     public function testSearchNoResults()
     {
         $search = new SearchExpression();

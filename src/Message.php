@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ddeboer\Imap;
 
-use Ddeboer\Imap\Exception\MessageDoesNotExistException;
-use Ddeboer\Imap\Message\EmailAddress;
 use Ddeboer\Imap\Exception\MessageDeleteException;
+use Ddeboer\Imap\Exception\MessageDoesNotExistException;
 use Ddeboer\Imap\Exception\MessageMoveException;
+use Ddeboer\Imap\Message\EmailAddress;
 
 /**
  * An IMAP message (e-mail)
@@ -16,7 +18,7 @@ class Message extends Message\Part
     private $attachments;
 
     /**
-     * @var boolean
+     * @var bool
      */
     private $keepUnseen = false;
 
@@ -109,6 +111,8 @@ class Message extends Message\Part
     /**
      * Get raw part content
      *
+     * @param mixed $keepUnseen
+     *
      * @return string
      */
     public function getContent($keepUnseen = false)
@@ -123,7 +127,7 @@ class Message extends Message\Part
     /**
      * Get message answered flag value (from headers)
      *
-     * @return boolean
+     * @return bool
      */
     public function isAnswered()
     {
@@ -133,7 +137,7 @@ class Message extends Message\Part
     /**
      * Get message deleted flag value (from headers)
      *
-     * @return boolean
+     * @return bool
      */
     public function isDeleted()
     {
@@ -143,7 +147,7 @@ class Message extends Message\Part
     /**
      * Get message draft flag value (from headers)
      *
-     * @return boolean
+     * @return bool
      */
     public function isDraft()
     {
@@ -153,11 +157,14 @@ class Message extends Message\Part
     /**
      * Has the message been marked as read?
      *
-     * @return boolean
+     * @return bool
      */
     public function isSeen()
     {
-        return 'U' != $this->getHeaders()->get('unseen');
+        return
+                'R' === $this->getHeaders()->get('recent')
+            || ('' === $this->getHeaders()->get('recent') && '' !== $this->getHeaders()->get('unseen'))
+        ;
     }
 
     /**
@@ -181,7 +188,7 @@ class Message extends Message\Part
             // imap_header is much faster than imap_fetchheader
             // imap_header returns only a subset of all mail headers,
             // but it does include the message flags.
-            $headers = imap_header($this->stream, imap_msgno($this->stream, $this->messageNumber));
+            $headers = imap_headerinfo($this->stream, imap_msgno($this->stream, $this->messageNumber));
             $this->headers = new Message\Headers($headers);
         }
 
@@ -229,7 +236,7 @@ class Message extends Message\Part
     public function getAttachments()
     {
         if (null === $this->attachments) {
-            $this->attachments = array();
+            $this->attachments = [];
             foreach ($this->getParts() as $part) {
                 if ($part instanceof Message\Attachment) {
                     $this->attachments[] = $part;
@@ -268,21 +275,30 @@ class Message extends Message\Part
         $this->headers = null;
 
         if (!imap_delete($this->stream, $this->messageNumber, \FT_UID)) {
-            throw new MessageDeleteException($this->messageNumber);
+            throw new MessageDeleteException(sprintf(
+                'Message "%s" cannot be deleted',
+                $this->messageNumber
+            ));
         }
     }
 
     /**
      * Move message to another mailbox
+     *
      * @param Mailbox $mailbox
      *
      * @throws MessageMoveException
+     *
      * @return Message
      */
     public function move(Mailbox $mailbox)
     {
         if (!imap_mail_move($this->stream, $this->messageNumber, $mailbox->getName(), \CP_UID)) {
-            throw new MessageMoveException($this->messageNumber, $mailbox->getName());
+            throw new MessageMoveException(sprintf(
+                'Message "%s" cannot be moved to "%s"',
+                $this->messageNumber,
+                $mailbox->getName()
+            ));
         }
 
         return $this;
@@ -309,14 +325,13 @@ class Message extends Message\Part
      */
     private function loadStructure()
     {
-        set_error_handler(
-            function ($nr, $error) {
-                throw new MessageDoesNotExistException(
-                    $this->messageNumber,
-                    $error
-                );
-            }
-        );
+        set_error_handler(function ($nr, $error) {
+            throw new MessageDoesNotExistException(sprintf(
+                'Message %s does not exist: %s',
+                $this->messageNumber,
+                $error
+            ), $nr);
+        });
 
         $structure = imap_fetchstructure(
             $this->stream,
