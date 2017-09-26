@@ -1,21 +1,19 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap\Search\Text;
 
 /**
  * Represents a body text contains condition. Messages must have a body
  * containing the specified text in order to match the condition.
  */
-final class Body extends AbstractText
+class Body extends Text
 {
     /**
      * Returns the keyword that the condition represents.
      *
      * @return string
      */
-    protected function getKeyword(): string
+    public function getKeyword()
     {
         return 'BODY';
     }

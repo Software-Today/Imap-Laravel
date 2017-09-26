@@ -1,21 +1,19 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap\Search\Text;
 
 /**
  * Represents a subject contains condition. Messages must have a subject
  * containing the specified text in order to match the condition.
  */
-final class Subject extends AbstractText
+class Subject extends Text
 {
     /**
      * Returns the keyword that the condition represents.
      *
      * @return string
      */
-    protected function getKeyword(): string
+    public function getKeyword()
     {
         return 'SUBJECT';
     }

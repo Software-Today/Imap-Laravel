@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap\Message;
 
 use Ddeboer\Imap\Parameters;
@@ -28,21 +26,29 @@ class Headers extends Parameters
 
     /**
      * Get header
-     *
+     * 
      * @param string $key
      *
      * @return string
      */
-    public function get(string $key)
+    public function get($key)
     {
         return parent::get(strtolower($key));
     }
-
-    private function parseHeader(string $key, $value)
+    
+    private function parseHeader($key, $value)
     {
         switch ($key) {
             case 'msgno':
-                return (int) $value;
+                return (int)$value;
+            case 'answered':
+                // no break
+            case 'deleted':
+                // no break
+            case 'draft':
+                // no break
+            case 'unseen':
+                return (bool)trim($value);
             case 'date':
                 $value = $this->decode($value);
                 $value = preg_replace('/([^\(]*)\(.*\)/', '$1', $value);
@@ -51,12 +57,13 @@ class Headers extends Parameters
             case 'from':
                 return $this->decodeEmailAddress(current($value));
             case 'to':
+                // no break
             case 'cc':
                 $emails = [];
                 foreach ($value as $address) {
                     $emails[] = $this->decodeEmailAddress($address);
                 }
-
+            
                 return $emails;
             case 'subject':
                 return $this->decode($value);
@@ -65,7 +72,7 @@ class Headers extends Parameters
         }
     }
 
-    private function decodeEmailAddress(\stdClass $value): EmailAddress
+    private function decodeEmailAddress($value)
     {
         return new EmailAddress(
             $value->mailbox,

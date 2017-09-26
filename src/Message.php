@@ -1,13 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap;
 
-use Ddeboer\Imap\Exception\MessageDeleteException;
 use Ddeboer\Imap\Exception\MessageDoesNotExistException;
-use Ddeboer\Imap\Exception\MessageMoveException;
 use Ddeboer\Imap\Message\EmailAddress;
+use Ddeboer\Imap\Exception\MessageDeleteException;
+use Ddeboer\Imap\Exception\MessageMoveException;
 
 /**
  * An IMAP message (e-mail)
@@ -18,7 +16,7 @@ class Message extends Message\Part
     private $attachments;
 
     /**
-     * @var bool
+     * @var boolean
      */
     private $keepUnseen = false;
 
@@ -28,7 +26,7 @@ class Message extends Message\Part
      * @param resource $stream        IMAP stream
      * @param int      $messageNumber Message number
      */
-    public function __construct($stream, int $messageNumber)
+    public function __construct($stream, $messageNumber)
     {
         $this->stream = $stream;
         $this->messageNumber = $messageNumber;
@@ -43,7 +41,7 @@ class Message extends Message\Part
      *
      * @return string
      */
-    public function getId(): string
+    public function getId()
     {
         return $this->getHeaders()->get('message_id');
     }
@@ -83,7 +81,7 @@ class Message extends Message\Part
      *
      * @return int
      */
-    public function getNumber(): int
+    public function getNumber()
     {
         return $this->messageNumber;
     }
@@ -111,11 +109,9 @@ class Message extends Message\Part
     /**
      * Get raw part content
      *
-     * @param mixed $keepUnseen
-     *
      * @return string
      */
-    public function getContent(bool $keepUnseen = false): string
+    public function getContent($keepUnseen = false)
     {
         // Null headers, so subsequent calls to getHeaders() will return
         // updated seen flag
@@ -127,7 +123,7 @@ class Message extends Message\Part
     /**
      * Get message answered flag value (from headers)
      *
-     * @return bool
+     * @return boolean
      */
     public function isAnswered()
     {
@@ -137,7 +133,7 @@ class Message extends Message\Part
     /**
      * Get message deleted flag value (from headers)
      *
-     * @return bool
+     * @return boolean
      */
     public function isDeleted()
     {
@@ -147,7 +143,7 @@ class Message extends Message\Part
     /**
      * Get message draft flag value (from headers)
      *
-     * @return bool
+     * @return boolean
      */
     public function isDraft()
     {
@@ -157,14 +153,11 @@ class Message extends Message\Part
     /**
      * Has the message been marked as read?
      *
-     * @return bool
+     * @return boolean
      */
-    public function isSeen(): bool
+    public function isSeen()
     {
-        return
-                'R' === $this->getHeaders()->get('recent')
-            || ('' === $this->getHeaders()->get('recent') && '' !== $this->getHeaders()->get('unseen'))
-        ;
+        return 'U' != $this->getHeaders()->get('unseen');
     }
 
     /**
@@ -182,13 +175,13 @@ class Message extends Message\Part
      *
      * @return Message\Headers
      */
-    public function getHeaders(): Message\Headers
+    public function getHeaders()
     {
         if (null === $this->headers) {
             // imap_header is much faster than imap_fetchheader
             // imap_header returns only a subset of all mail headers,
             // but it does include the message flags.
-            $headers = imap_headerinfo($this->stream, imap_msgno($this->stream, $this->messageNumber));
+            $headers = imap_header($this->stream, imap_msgno($this->stream, $this->messageNumber));
             $this->headers = new Message\Headers($headers);
         }
 
@@ -215,7 +208,7 @@ class Message extends Message\Part
      *
      * @return string
      */
-    public function getBodyText(): string
+    public function getBodyText()
     {
         $iterator = new \RecursiveIteratorIterator($this, \RecursiveIteratorIterator::SELF_FIRST);
         foreach ($iterator as $part) {
@@ -233,10 +226,10 @@ class Message extends Message\Part
      *
      * @return Message\Attachment[]
      */
-    public function getAttachments(): array
+    public function getAttachments()
     {
         if (null === $this->attachments) {
-            $this->attachments = [];
+            $this->attachments = array();
             foreach ($this->getParts() as $part) {
                 if ($part instanceof Message\Attachment) {
                     $this->attachments[] = $part;
@@ -259,7 +252,7 @@ class Message extends Message\Part
      *
      * @return bool
      */
-    public function hasAttachments(): bool
+    public function hasAttachments()
     {
         return count($this->getAttachments()) > 0;
     }
@@ -275,30 +268,21 @@ class Message extends Message\Part
         $this->headers = null;
 
         if (!imap_delete($this->stream, $this->messageNumber, \FT_UID)) {
-            throw new MessageDeleteException(sprintf(
-                'Message "%s" cannot be deleted',
-                $this->messageNumber
-            ));
+            throw new MessageDeleteException($this->messageNumber);
         }
     }
 
     /**
      * Move message to another mailbox
-     *
      * @param Mailbox $mailbox
      *
      * @throws MessageMoveException
-     *
      * @return Message
      */
-    public function move(Mailbox $mailbox): self
+    public function move(Mailbox $mailbox)
     {
         if (!imap_mail_move($this->stream, $this->messageNumber, $mailbox->getName(), \CP_UID)) {
-            throw new MessageMoveException(sprintf(
-                'Message "%s" cannot be moved to "%s"',
-                $this->messageNumber,
-                $mailbox->getName()
-            ));
+            throw new MessageMoveException($this->messageNumber, $mailbox->getName());
         }
 
         return $this;
@@ -313,9 +297,9 @@ class Message extends Message\Part
      *
      * @return Message
      */
-    public function keepUnseen(bool $bool = true): self
+    public function keepUnseen($bool = true)
     {
-        $this->keepUnseen = $bool;
+        $this->keepUnseen = (bool) $bool;
 
         return $this;
     }
@@ -325,13 +309,14 @@ class Message extends Message\Part
      */
     private function loadStructure()
     {
-        set_error_handler(function ($nr, $error) {
-            throw new MessageDoesNotExistException(sprintf(
-                'Message %s does not exist: %s',
-                $this->messageNumber,
-                $error
-            ), $nr);
-        });
+        set_error_handler(
+            function ($nr, $error) {
+                throw new MessageDoesNotExistException(
+                    $this->messageNumber,
+                    $error
+                );
+            }
+        );
 
         $structure = imap_fetchstructure(
             $this->stream,

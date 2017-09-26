@@ -1,9 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap\Exception;
 
-final class MailboxDoesNotExistException extends Exception
+class MailboxDoesNotExistException extends Exception
 {
+    public function __construct($mailbox)
+    {
+        parent::__construct('Mailbox ' . $mailbox. ' does not exist');
+    }
 }

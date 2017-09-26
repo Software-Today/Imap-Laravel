@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap\Message;
 
 /**
@@ -14,12 +12,12 @@ class EmailAddress
     private $name;
     private $address;
 
-    public function __construct(string $mailbox, string $hostname = null, string $name = null)
+    public function __construct($mailbox, $hostname = null, $name = null)
     {
         $this->mailbox = $mailbox;
         $this->hostname = $hostname;
         $this->name = $name;
-
+        
         if ($hostname) {
             $this->address = $mailbox . '@' . $hostname;
         }
@@ -35,18 +33,18 @@ class EmailAddress
      *
      * @return string
      */
-    public function getFullAddress(): string
+    public function getFullAddress()
     {
         if ($this->name) {
-            $address = sprintf('%s <%s@%s>', $this->name, $this->mailbox, $this->hostname);
+            $address = sprintf("%s <%s@%s>", $this->name, $this->mailbox, $this->hostname);
         } else {
-            $address = sprintf('%s@%s', $this->mailbox, $this->hostname);
+            $address = sprintf("%s@%s", $this->mailbox, $this->hostname);
         }
 
         return $address;
     }
 
-    public function getMailbox(): string
+    public function getMailbox()
     {
         return $this->mailbox;
     }

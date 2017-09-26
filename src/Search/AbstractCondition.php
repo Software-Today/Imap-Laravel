@@ -1,20 +1,18 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap\Search;
 
 /**
  * Represents a condition that can be used in a search expression.
  */
-abstract class AbstractCondition implements ConditionInterface
+abstract class AbstractCondition
 {
     /**
      * Converts the condition to a string that can be sent to the IMAP server.
      *
      * @return string
      */
-    public function toString(): string
+    public function __toString()
     {
         return $this->getKeyword();
     }
@@ -24,5 +22,5 @@ abstract class AbstractCondition implements ConditionInterface
      *
      * @return string
      */
-    abstract protected function getKeyword(): string;
+    abstract protected function getKeyword();
 }

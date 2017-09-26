@@ -1,10 +1,8 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap\Search\Date;
 
-use DateTimeInterface;
+use DateTime;
 use Ddeboer\Imap\Search\AbstractCondition;
 
 /**
@@ -17,24 +15,35 @@ abstract class AbstractDate extends AbstractCondition
      *
      * @var string
      */
-    private $dateFormat;
+    const DATE_FORMAT = 'Y-m-d';
 
     /**
      * The date to be used for the condition.
      *
-     * @var DateTimeInterface
+     * @var DateTime
      */
-    private $date;
+    protected $date;
 
     /**
      * Constructor.
      *
-     * @param DateTimeInterface $date optional date for the condition
+     * @param DateTime $date Optional date for the condition.
      */
-    public function __construct(DateTimeInterface $date, string $dateFormat = 'd-m-Y')
+    public function __construct(DateTime $date = null)
+    {
+        if ($date) {
+            $this->setDate($date);
+        }
+    }
+
+    /**
+     * Sets the date for the condition.
+     *
+     * @param DateTime $date
+     */
+    public function setDate(DateTime $date)
     {
         $this->date = $date;
-        $this->dateFormat = $dateFormat;
     }
 
     /**
@@ -42,8 +51,8 @@ abstract class AbstractDate extends AbstractCondition
      *
      * @return string
      */
-    final public function toString(): string
+    public function __toString()
     {
-        return sprintf('%s "%s"', $this->getKeyword(), $this->date->format($this->dateFormat));
+        return $this->getKeyword() . ' "' . $this->date->format(self::DATE_FORMAT) .'"';
     }
 }

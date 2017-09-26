@@ -1,14 +1,7 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap\Tests;
 
-/**
- * @covers \Ddeboer\Imap\Message
- * @covers \Ddeboer\Imap\Mailbox::expunge
- * @covers \Ddeboer\Imap\Connection::expunge
- */
 class MessageTest extends AbstractTest
 {
     /**
@@ -16,9 +9,14 @@ class MessageTest extends AbstractTest
      */
     protected $mailbox;
 
-    protected function setUp()
+    public function setUp()
     {
-        $this->mailbox = $this->createMailbox();
+        $this->mailbox = $this->createMailbox('test-message');
+    }
+
+    public function tearDown()
+    {
+        $this->deleteMailbox($this->mailbox);
     }
 
     public function testKeepUnseen()
@@ -46,7 +44,7 @@ class MessageTest extends AbstractTest
 
         $message = $this->mailbox->getMessage(1);
         $this->assertEquals('lietuviškos raidės', $message->getSubject());
-        $this->assertEquals('lietuviškos raidės', rtrim($message->getBodyText()));
+        $this->assertEquals('lietuviškos raidės', $message->getBodyText());
     }
 
     public function testEncodingQuotedPrintable()
@@ -55,12 +53,11 @@ class MessageTest extends AbstractTest
         $raw = "Subject: ESPAÑA\r\n"
             . "Date: =?ISO-8859-2?Q?Fri,_13_Jun_2014_17:18:44_+020?= =?ISO-8859-2?Q?0_(St=F8edn=ED_Evropa_(letn=ED_=E8as))?=\r\n"
             . "Content-Type: multipart/alternative; boundary=\"$boundary\"\r\n"
-            . "\r\n"
             . "--$boundary\r\n"
             . "Content-Transfer-Encoding: quoted-printable\r\n"
             . "Content-Type: text/html; charset=\"windows-1252\"\r\n"
             . "\r\n"
-            . "<html><body>Espa=C3=B1a</body></html>\r\n\r\n"
+            . "<html><body>Espa=F1a</body></html>\r\n\r\n"
             . "--$boundary--\r\n\r\n";
 
         $this->mailbox->addMessage($raw);
@@ -70,12 +67,12 @@ class MessageTest extends AbstractTest
         $this->assertEquals("<html><body>España</body></html>\r\n", $message->getBodyHtml());
         $this->assertEquals(new \DateTime('2014-06-13 17:18:44+0200'), $message->getDate());
     }
-
+    
     public function testEmailAddress()
     {
         $this->mailbox->addMessage($this->getFixture('email_address'));
         $message = $this->mailbox->getMessage(1);
-
+        
         $from = $message->getFrom();
         $this->assertInstanceOf('\Ddeboer\Imap\Message\EmailAddress', $from);
         $this->assertEquals('no_host', $from->getMailbox());
@@ -85,7 +82,7 @@ class MessageTest extends AbstractTest
         $this->assertInstanceOf('\Ddeboer\Imap\Message\EmailAddress', $cc[0]);
         $this->assertEquals('This one is right', $cc[0]->getName());
         $this->assertEquals('ding@dong.com', $cc[0]->getAddress());
-
+        
         $this->assertInstanceOf('\Ddeboer\Imap\Message\EmailAddress', $cc[1]);
         $this->assertEquals('No-address', $cc[1]->getMailbox());
     }
@@ -100,7 +97,7 @@ class MessageTest extends AbstractTest
         $this->assertEquals('Undisclosed recipients', $message->getSubject());
         $this->assertCount(0, $message->getTo());
     }
-
+    
     public function testDelete()
     {
         $this->createTestMessage($this->mailbox, 'Message A');
@@ -109,7 +106,6 @@ class MessageTest extends AbstractTest
 
         $message = $this->mailbox->getMessage(3);
         $message->delete();
-        $this->mailbox->expunge();
 
         $this->assertCount(2, $this->mailbox);
         foreach ($this->mailbox->getMessages() as $message) {
@@ -120,12 +116,12 @@ class MessageTest extends AbstractTest
     /**
      * @dataProvider getAttachmentFixture
      */
-    public function testGetAttachments(string $fixture)
+    public function testGetAttachments()
     {
         $this->mailbox->addMessage(
-            $this->getFixture($fixture)
+            $this->getFixture('attachment_encoded_filename')
         );
-
+        
         $message = $this->mailbox->getMessage(1);
         $this->assertCount(1, $message->getAttachments());
         $attachment = $message->getAttachments()[0];
@@ -134,12 +130,12 @@ class MessageTest extends AbstractTest
             $attachment->getFilename()
         );
     }
-
-    public function getAttachmentFixture(): array
+    
+    public function getAttachmentFixture()
     {
         return [
-            ['attachment_no_disposition'],
-            ['attachment_encoded_filename'],
+            [ 'attachment_no_disposition' ],
+            [ 'attachment_encoded_filename' ]
         ];
     }
 }

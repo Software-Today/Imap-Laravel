@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap;
 
 class MessageIterator extends \ArrayIterator
@@ -26,7 +24,7 @@ class MessageIterator extends \ArrayIterator
      *
      * @return Message
      */
-    public function current(): Message
+    public function current()
     {
         return new Message($this->stream, parent::current());
     }

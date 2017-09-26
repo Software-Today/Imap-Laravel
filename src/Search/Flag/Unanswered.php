@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap\Search\Flag;
 
 use Ddeboer\Imap\Search\AbstractCondition;
@@ -10,14 +8,14 @@ use Ddeboer\Imap\Search\AbstractCondition;
  * Represents an UNANSWERED flag condition. Messages must not have the
  * \\ANSWERED flag set in order to match the condition.
  */
-final class Unanswered extends AbstractCondition
+class Unanswered extends AbstractCondition
 {
     /**
      * Returns the keyword that the condition represents.
      *
      * @return string
      */
-    protected function getKeyword(): string
+    public function getKeyword()
     {
         return 'UNANSWERED';
     }

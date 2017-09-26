@@ -1,31 +1,29 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Ddeboer\Imap;
 
-use Ddeboer\Imap\Search\ConditionInterface;
+use Ddeboer\Imap\Search\AbstractCondition;
 
 /**
  * Defines a search expression that can be used to look up email messages.
  */
-final class SearchExpression implements ConditionInterface
+class SearchExpression
 {
     /**
      * The conditions that together represent the expression.
      *
      * @var array
      */
-    private $conditions = [];
+    private $conditions = array();
 
     /**
      * Adds a new condition to the expression.
      *
-     * @param AbstractCondition $condition the condition to be added
+     * @param  AbstractCondition $condition The condition to be added.
      *
-     * @return self
+     * @return SearchExpression
      */
-    public function addCondition(ConditionInterface $condition): self
+    public function addCondition(AbstractCondition $condition)
     {
         $this->conditions[] = $condition;
 
@@ -37,12 +35,8 @@ final class SearchExpression implements ConditionInterface
      *
      * @return string
      */
-    public function toString(): string
+    public function __toString()
     {
-        $conditions = array_map(function (ConditionInterface $condition) {
-            return $condition->toString();
-        }, $this->conditions);
-
-        return implode(' ', $conditions);
+        return implode(' ', $this->conditions);
     }
 }
