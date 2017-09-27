@@ -1,7 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ddeboer\Imap\Tests;
 
+use Ddeboer\Imap\Exception\UnsupportedEncodingException;
+use Zend\Mime\Mime;
+
+/**
+ * @covers \Ddeboer\Imap\Connection::expunge
+ * @covers \Ddeboer\Imap\Mailbox::expunge
+ * @covers \Ddeboer\Imap\Message
+ * @covers \Ddeboer\Imap\Message\Attachment
+ * @covers \Ddeboer\Imap\Message\EmailAddress
+ * @covers \Ddeboer\Imap\Message\Headers
+ * @covers \Ddeboer\Imap\Message\Part
+ */
 class MessageTest extends AbstractTest
 {
     /**
@@ -9,14 +23,9 @@ class MessageTest extends AbstractTest
      */
     protected $mailbox;
 
-    public function setUp()
+    protected function setUp()
     {
-        $this->mailbox = $this->createMailbox('test-message');
-    }
-
-    public function tearDown()
-    {
-        $this->deleteMailbox($this->mailbox);
+        $this->mailbox = $this->createMailbox();
     }
 
     public function testKeepUnseen()
@@ -38,41 +47,84 @@ class MessageTest extends AbstractTest
         $this->assertFalse($message->isSeen());
     }
 
-    public function testEncoding7Bit()
+    /**
+     * @dataProvider provideCharsets
+     */
+    public function testBodyCharsets(string $charset = null, string $charList, string $encoding = null)
     {
-        $this->createTestMessage($this->mailbox, 'lietuviškos raidės', 'lietuviškos raidės');
+        $subject = sprintf('[%s:%s]', $charset, $encoding);
+        $this->createTestMessage(
+            $this->mailbox,
+            $subject,
+            mb_convert_encoding($charList, $charset ?? 'ASCII', 'UTF-8'),
+            $encoding,
+            $charset
+        );
 
         $message = $this->mailbox->getMessage(1);
-        $this->assertEquals('lietuviškos raidės', $message->getSubject());
-        $this->assertEquals('lietuviškos raidės', $message->getBodyText());
+
+        $this->assertSame($subject, $message->getSubject());
+        $this->assertSame($charList, rtrim($message->getBodyText()));
     }
 
-    public function testEncodingQuotedPrintable()
+    public function provideCharsets(): array
     {
-        $boundary = 'Mailer=123';
-        $raw = "Subject: ESPAÑA\r\n"
-            . "Date: =?ISO-8859-2?Q?Fri,_13_Jun_2014_17:18:44_+020?= =?ISO-8859-2?Q?0_(St=F8edn=ED_Evropa_(letn=ED_=E8as))?=\r\n"
-            . "Content-Type: multipart/alternative; boundary=\"$boundary\"\r\n"
-            . "--$boundary\r\n"
-            . "Content-Transfer-Encoding: quoted-printable\r\n"
-            . "Content-Type: text/html; charset=\"windows-1252\"\r\n"
-            . "\r\n"
-            . "<html><body>Espa=F1a</body></html>\r\n\r\n"
-            . "--$boundary--\r\n\r\n";
+        $charsets = [
+            'ASCII' => '! "#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~',
+            'GB18030' => "　、。〃々〆〇〈〉《》「」『』【】〒〓〔〕〖〗〝〞〡〢〣〤〥〦〧〨〩〾一\u{200b}丁\u{200b}丂踰\u{200b}踱\u{200b}踲\u{200b}",
+            'ISO-8859-6' => 'ءآأؤإئابةتثجحخدذرزسشصضطظعغـفقكلمنهوىي',
+            'ISO-8859-7' => 'ΆΈΉΊ»Ό½ΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟ2ΠΡΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώ',
+            'SJIS' => '｡｢｣､･ｦｧｨｩｪｫｬｭｮｯBｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿCﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏDﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝﾞﾟ',
+            'UTF-8' => '€✔',
+            'Windows-1251' => 'ЂЃѓЉЊЌЋЏђљњќћџЎўЈҐЁЄЇІіґёєјЅѕїАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя',
+            'Windows-1252' => 'ƒŠŒŽšœžŸªºÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ',
+        ];
 
-        $this->mailbox->addMessage($raw);
+        $provider = [];
+
+        // This first data set mimics "us-ascii" imap server default settings
+        $provider[] = [null, $charsets['ASCII'], null];
+
+        $encodings = [
+            Mime::ENCODING_7BIT,
+            Mime::ENCODING_8BIT,
+            Mime::ENCODING_QUOTEDPRINTABLE,
+            Mime::ENCODING_BASE64,
+        ];
+
+        foreach ($charsets as $charset => $charList) {
+            foreach ($encodings as $encoding) {
+                $provider[] = [$charset, $charList, $encoding];
+            }
+        }
+
+        return $provider;
+    }
+
+    public function testUnsupportedCharset()
+    {
+        $charset = uniqid('NAN_CHARSET_');
+        $this->createTestMessage(
+            $this->mailbox,
+            'Unsupported',
+            null,
+            null,
+            $charset
+        );
 
         $message = $this->mailbox->getMessage(1);
-        $this->assertEquals('ESPAÑA', $message->getSubject());
-        $this->assertEquals("<html><body>España</body></html>\r\n", $message->getBodyHtml());
-        $this->assertEquals(new \DateTime('2014-06-13 17:18:44+0200'), $message->getDate());
+
+        $this->expectException(UnsupportedEncodingException::class);
+        $this->expectExceptionMessageRegexp(sprintf('/%s/', preg_quote($charset)));
+
+        $message->getBodyText();
     }
-    
+
     public function testEmailAddress()
     {
         $this->mailbox->addMessage($this->getFixture('email_address'));
         $message = $this->mailbox->getMessage(1);
-        
+
         $from = $message->getFrom();
         $this->assertInstanceOf('\Ddeboer\Imap\Message\EmailAddress', $from);
         $this->assertEquals('no_host', $from->getMailbox());
@@ -82,7 +134,7 @@ class MessageTest extends AbstractTest
         $this->assertInstanceOf('\Ddeboer\Imap\Message\EmailAddress', $cc[0]);
         $this->assertEquals('This one is right', $cc[0]->getName());
         $this->assertEquals('ding@dong.com', $cc[0]->getAddress());
-        
+
         $this->assertInstanceOf('\Ddeboer\Imap\Message\EmailAddress', $cc[1]);
         $this->assertEquals('No-address', $cc[1]->getMailbox());
     }
@@ -97,7 +149,7 @@ class MessageTest extends AbstractTest
         $this->assertEquals('Undisclosed recipients', $message->getSubject());
         $this->assertCount(0, $message->getTo());
     }
-    
+
     public function testDelete()
     {
         $this->createTestMessage($this->mailbox, 'Message A');
@@ -106,6 +158,7 @@ class MessageTest extends AbstractTest
 
         $message = $this->mailbox->getMessage(3);
         $message->delete();
+        $this->mailbox->expunge();
 
         $this->assertCount(2, $this->mailbox);
         foreach ($this->mailbox->getMessages() as $message) {
@@ -116,12 +169,12 @@ class MessageTest extends AbstractTest
     /**
      * @dataProvider getAttachmentFixture
      */
-    public function testGetAttachments()
+    public function testGetAttachments(string $fixture)
     {
         $this->mailbox->addMessage(
-            $this->getFixture('attachment_encoded_filename')
+            $this->getFixture($fixture)
         );
-        
+
         $message = $this->mailbox->getMessage(1);
         $this->assertCount(1, $message->getAttachments());
         $attachment = $message->getAttachments()[0];
@@ -130,12 +183,12 @@ class MessageTest extends AbstractTest
             $attachment->getFilename()
         );
     }
-    
-    public function getAttachmentFixture()
+
+    public function getAttachmentFixture(): array
     {
         return [
-            [ 'attachment_no_disposition' ],
-            [ 'attachment_encoded_filename' ]
+            ['attachment_no_disposition'],
+            ['attachment_encoded_filename'],
         ];
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ddeboer\Imap\Search\Email;
 
 use Ddeboer\Imap\Search\AbstractCondition;
@@ -14,26 +16,14 @@ abstract class AbstractEmail extends AbstractCondition
      *
      * @var string
      */
-    protected $email;
+    private $email;
 
     /**
      * Constructor
      *
-     * @param string $email Optional email address for the condition.
+     * @param string $email optional email address for the condition
      */
-    public function __construct($email = null)
-    {
-        if ($email) {
-            $this->setEmail($email);
-        }
-    }
-
-    /**
-     * Sets the email address for the condition.
-     *
-     * @param string $email
-     */
-    public function setEmail($email)
+    public function __construct(string $email)
     {
         $this->email = $email;
     }
@@ -43,8 +33,8 @@ abstract class AbstractEmail extends AbstractCondition
      *
      * @return string
      */
-    public function __toString()
+    final public function toString(): string
     {
-        return $this->getKeyword() . ' "' . $this->email . '"';
+        return sprintf('%s "%s"', $this->getKeyword(), $this->email);
     }
 }

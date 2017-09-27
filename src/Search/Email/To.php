@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ddeboer\Imap\Search\Email;
 
 /**
@@ -7,14 +9,14 @@ namespace Ddeboer\Imap\Search\Email;
  * to the specified recipient (along with any others) in order to match the
  * condition.
  */
-class To extends AbstractEmail
+final class To extends AbstractEmail
 {
     /**
      * Returns the keyword that the condition represents.
      *
      * @return string
      */
-    public function getKeyword()
+    protected function getKeyword(): string
     {
         return 'TO';
     }

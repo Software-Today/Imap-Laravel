@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Ddeboer\Imap\Search\Text;
 
 use Ddeboer\Imap\Search\AbstractCondition;
@@ -15,26 +17,14 @@ abstract class AbstractText extends AbstractCondition
      *
      * @var string
      */
-    protected $text;
+    private $text;
 
     /**
      * Constructor.
      *
-     * @param string $text Optional text for the condition.
+     * @param string $text optional text for the condition
      */
-    public function __construct($text = null)
-    {
-        if (!is_null($text) && strlen($text) > 0) {
-            $this->setText($text);
-        }
-    }
-
-    /**
-     * Sets the text for the condition.
-     *
-     * @param string $text
-     */
-    public function setText($text)
+    public function __construct(string $text)
     {
         $this->text = $text;
     }
@@ -44,8 +34,8 @@ abstract class AbstractText extends AbstractCondition
      *
      * @return string
      */
-    public function __toString()
+    final public function toString(): string
     {
-        return $this->getKeyword() . ' "' . str_replace('"', '\\"', $this->text) . '"';
+        return sprintf('%s "%s"', $this->getKeyword(), str_replace('"', '\\"', $this->text));
     }
 }
