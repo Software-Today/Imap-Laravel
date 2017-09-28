@@ -54,7 +54,9 @@ class Headers extends Parameters
             case 'cc':
                 $emails = [];
                 foreach ($value as $address) {
-                    $emails[] = $this->decodeEmailAddress($address);
+                    if (isset($address->mailbox)) {
+                        $emails[] = $this->decodeEmailAddress($address);
+                    }
                 }
 
                 return $emails;
