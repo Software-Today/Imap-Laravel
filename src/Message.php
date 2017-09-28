@@ -398,4 +398,28 @@ class Message extends Message\Part
 
         $this->parseStructure($structure);
     }
+
+    /**
+     * Set Flag Message
+     *
+     * @param $flag \Seen, \Answered, \Flagged, \Deleted, and \Draft
+     *
+     * @return bool
+     */
+    public function setFlag($flag)
+    {
+        return imap_setflag_full($this->stream, $this->messageNumber, $flag, ST_UID);
+    }
+
+    /**
+     * Clear Flag Message
+     *
+     * @param $flag \Seen, \Answered, \Flagged, \Deleted, and \Draft
+     *
+     * @return bool
+     */
+    public function clearFlag($flag)
+    {
+        return imap_clearflag_full($this->stream, $this->messageNumber, $flag, ST_UID);
+    }
 }
