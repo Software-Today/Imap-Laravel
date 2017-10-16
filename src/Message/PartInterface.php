@@ -114,13 +114,6 @@ interface PartInterface extends \RecursiveIterator
     public function getStructure(): \stdClass;
 
     /**
-     * Get part number.
-     *
-     * @return string
-     */
-    public function getPartNumber(): string;
-
-    /**
      * Get an array of all parts for this message.
      *
      * @return PartInterface[]
