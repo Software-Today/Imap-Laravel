@@ -32,9 +32,9 @@ interface BasicMessageInterface extends PartInterface
      *
      * A unique message id in the form <...>
      *
-     * @return string
+     * @return null|string
      */
-    public function getId(): string;
+    public function getId();
 
     /**
      * Get message sender (from headers).
@@ -105,20 +105,6 @@ interface BasicMessageInterface extends PartInterface
      * @return string
      */
     public function getSubject();
-
-    /**
-     * Get message In-Reply-To (from headers).
-     *
-     * @return array
-     */
-    public function getInReplyTo(): array;
-
-    /**
-     * Get message References (from headers).
-     *
-     * @return array
-     */
-    public function getReferences(): array;
 
     /**
      * Get body HTML.

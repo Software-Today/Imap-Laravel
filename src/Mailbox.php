@@ -115,40 +115,6 @@ final class Mailbox implements MailboxInterface
     }
 
     /**
-     * Bulk Set Flag for Messages.
-     *
-     * @param string       $flag    \Seen, \Answered, \Flagged, \Deleted, and \Draft
-     * @param array|string $numbers Message numbers
-     *
-     * @return bool
-     */
-    public function setFlag(string $flag, $numbers): bool
-    {
-        if (\is_array($numbers)) {
-            $numbers = \implode(',', $numbers);
-        }
-
-        return \imap_setflag_full($this->resource->getStream(), (string) $numbers, $flag, \ST_UID);
-    }
-
-    /**
-     * Bulk Clear Flag for Messages.
-     *
-     * @param string       $flag    \Seen, \Answered, \Flagged, \Deleted, and \Draft
-     * @param array|string $numbers Message numbers
-     *
-     * @return bool
-     */
-    public function clearFlag(string $flag, $numbers): bool
-    {
-        if (\is_array($numbers)) {
-            $numbers = \implode(',', $numbers);
-        }
-
-        return \imap_clearflag_full($this->resource->getStream(), (string) $numbers, $flag, \ST_UID);
-    }
-
-    /**
      * Get message ids.
      *
      * @param ConditionInterface $search Search expression (optional)
@@ -215,21 +181,5 @@ final class Mailbox implements MailboxInterface
     public function addMessage(string $message): bool
     {
         return \imap_append($this->resource->getStream(), $this->getFullEncodedName(), $message);
-    }
-
-    /**
-     * Returns a tree of threaded message for the current Mailbox.
-     *
-     * @return array
-     */
-    public function getThread(): array
-    {
-        \set_error_handler(function () {});
-
-        $tree = \imap_thread($this->resource->getStream());
-
-        \restore_error_handler();
-
-        return false !== $tree ? $tree : [];
     }
 }

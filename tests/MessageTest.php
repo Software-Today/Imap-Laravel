@@ -493,9 +493,6 @@ final class MessageTest extends AbstractTest
         $this->assertArrayHasKey('date', $headers);
         $this->assertArrayHasKey('recent', $headers);
 
-        $this->assertSame('Wed, 27 Sep 2017 12:48:51 +0200', $headers['date']);
-        $this->assertSame('A_€@{è_Z', $headers['bcc'][0]->personal);
-
         $this->assertFalse($message->isSeen());
     }
 
@@ -662,42 +659,6 @@ final class MessageTest extends AbstractTest
         $this->assertSame('MyHtml', \rtrim($message->getBodyHtml()));
     }
 
-    public function testGetInReplyTo()
-    {
-        $fixture = $this->getFixture('references');
-        $this->mailbox->addMessage($fixture);
-
-        $message = $this->mailbox->getMessage(1);
-
-        $this->assertCount(1, $message->getInReplyTo());
-        $this->assertContains('<b9e87bd5e661a645ed6e3b832828fcc5@example.com>', $message->getInReplyTo());
-
-        $fixture = $this->getFixture('plain_only');
-        $this->mailbox->addMessage($fixture);
-
-        $message = $this->mailbox->getMessage(2);
-
-        $this->assertCount(0, $message->getInReplyTo());
-    }
-
-    public function testGetReferences()
-    {
-        $fixture = $this->getFixture('references');
-        $this->mailbox->addMessage($fixture);
-
-        $message = $this->mailbox->getMessage(1);
-
-        $this->assertCount(2, $message->getReferences());
-        $this->assertContains('<08F04024-A5B3-4FDE-BF2C-6710DE97D8D9@example.com>', $message->getReferences());
-
-        $fixture = $this->getFixture('plain_only');
-        $this->mailbox->addMessage($fixture);
-
-        $message = $this->mailbox->getMessage(2);
-
-        $this->assertCount(0, $message->getReferences());
-    }
-
     public function testInlineAttachment()
     {
         $this->mailbox->addMessage($this->getFixture('inline_attachment'));
@@ -762,6 +723,15 @@ final class MessageTest extends AbstractTest
             $charset = \str_replace('.xml', '', $attachment->getFilename());
             $this->assertSame(\mb_convert_encoding(self::$charsets[$charset], $charset, 'UTF-8'), $attachment->getDecodedContent());
         }
+    }
+
+    public function testNoMessageId()
+    {
+        $this->mailbox->addMessage($this->getFixture('plain_only'));
+
+        $message = $this->mailbox->getMessage(1);
+
+        $this->assertNull($message->getId());
     }
 
     private function resetAttachmentCharset(Message $message)

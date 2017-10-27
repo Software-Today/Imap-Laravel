@@ -1,4 +1,5 @@
-# IMAP library
+IMAP library
+============
 
 [![Build Status](https://travis-ci.org/ddeboer/imap.svg?branch=master)](https://travis-ci.org/ddeboer/imap)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/ddeboer/imap/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/ddeboer/imap/?branch=master)
@@ -8,25 +9,10 @@
 
 A PHP 7.0+ library to read and process e-mails over IMAP.
 
-This library requires [IMAP](https://secure.php.net/manual/en/book.imap.php),
-[iconv](https://secure.php.net/manual/en/book.iconv.php) and
-[Multibyte String](https://secure.php.net/manual/en/book.mbstring.php) extensions installed.
+This library requires both [IMAP](https://secure.php.net/manual/en/book.imap.php) and [Multibyte String](https://secure.php.net/manual/en/book.mbstring.php) extensions installed.
 
-## Table of Contents
-
-1. [Installation](#installation)
-1. [Usage](#usage)
-    1. [Connect and Authenticate](#connect-and-authenticate)
-    1. [Mailboxes](#mailboxes)
-    1. [Messages](#messages)
-        1. [Searching for Messages](#searching-for-messages)
-        1. [Message Properties and Operations](#message-properties-and-operations)
-    1. [Message Attachments](#message-attachments)
-    1. [Embedded Messages](#embedded-messages)
-1. [Mock the library](#mock-the-library)
-1. [Running the Tests](#running-the-tests)
-
-## Installation
+Installation
+------------
 
 The recommended way to install the IMAP library is through [Composer](https://getcomposer.org):
 
@@ -38,7 +24,8 @@ This command requires you to have Composer installed globally, as explained
 in the [installation chapter](https://getcomposer.org/doc/00-intro.md)
 of the Composer documentation.
 
-## Usage
+Usage
+-----
 
 ### Connect and Authenticate
 
@@ -50,6 +37,8 @@ $server = new Server('imap.gmail.com');
 // $connection is instance of \Ddeboer\Imap\Connection
 $connection = $server->authenticate('my_username', 'my_password');
 ```
+
+#### Options
 
 You can specify port, [flags and parameters](https://secure.php.net/manual/en/function.imap-open.php)
 to the server:
@@ -95,17 +84,6 @@ Delete a mailbox:
 $connection->deleteMailbox($mailbox);
 ```
 
-You can bulk set, or clear, any [flag](https://secure.php.net/manual/en/function.imap-setflag-full.php) of mailbox messages (by UIDs):
-
-```php
-$mailbox->setFlag('\\Seen \\Flagged', ['1:5', '7', '9']);
-$mailbox->setFlag('\\Seen', '1,3,5,6:8');
-
-$mailbox->clearFlag('\\Flagged', '1,3');
-```
-
-**WARNING** You must retrieve new Message instances in case of bulk modify flags to refresh the single Messages flags.
-
 ### Messages
 
 Retrieve messages (e-mails) from a mailbox and iterate over them:
@@ -126,8 +104,10 @@ use Ddeboer\Imap\Search\Email\To;
 use Ddeboer\Imap\Search\Text\Body;
 
 $search = new SearchExpression();
-$search->addCondition(new To('me@here.com'));
-$search->addCondition(new Body('contents'));
+$search
+    ->addCondition(new To('me@here.com'))
+    ->addCondition(new Body('contents'))
+;
 
 $messages = $mailbox->getMessages($search);
 ```
@@ -137,15 +117,15 @@ escaped together. Only spaces are currently escaped correctly.
 You can use `Ddeboer\Imap\Search\RawExpression` to write the complete search
 condition by yourself.
 
-Messages can also be retrieved sorted as per [imap_sort](https://secure.php.net/manual/en/function.imap-sort.php)
-function:
+**WARNING** `OR` condition has never been reported as correctly functioning.
+
+##### Ordered search
+
+Reference: [imap_sort](https://secure.php.net/manual/en/function.imap-sort.php)
 
 ```php
-$today = new DateTimeImmutable();
-$lastMonth = $today->sub(new DateInterval('P30D'));
-
 $messages = $mailbox->getMessages(
-    new Ddeboer\Imap\Search\Date\Since($lastMonth),
+    new Ddeboer\Imap\Search\LogicalOperator\All(),
     \SORTDATE, // Sort criteria
     true // Descending order
 );
@@ -165,9 +145,9 @@ Get other message properties:
 
 ```php
 $message->getSubject();
-$message->getFrom();    // Message\EmailAddress
-$message->getTo();      // array of Message\EmailAddress
-$message->getDate();    // DateTimeImmutable
+$message->getFrom();
+$message->getTo();
+$message->getDate();
 $message->isAnswered();
 $message->isDeleted();
 $message->isDraft();
@@ -183,8 +163,8 @@ $message->getHeaders();
 Get message body as HTML or plain text:
 
 ```php
-$message->getBodyHtml();    // Content of text/html part, if present
-$message->getBodyText();    // Content of text/plain part, if present
+$message->getBodyHtml();
+$message->getBodyText();
 ```
 
 Reading the message body keeps the message as unseen.
@@ -258,13 +238,8 @@ foreach ($attachments as $attachment) {
 An EmbeddedMessage has the same API as a normal Message, apart from flags
 and operations like copy, move or delete.
 
-## Mock the library
-
-Mockability is granted by interfaces present for each API.
-Dig into [MockabilityTest](tests/MockabilityTest.php) for an example of a
-mocked workflow.
-
-## Running the Tests
+Running the Tests
+-----------------
 
 This library is functionally tested on [Travis CI](https://travis-ci.org/ddeboer/imap)
 against a local Dovecot server.
@@ -292,11 +267,6 @@ these environment variables in it:
             <directory>./tests/</directory>
         </testsuite>
     </testsuites>
-    <filter>
-        <whitelist>
-            <directory suffix=".php">./src</directory>
-        </whitelist>
-    </filter>
     <php>
         <env name="IMAP_SERVER_NAME" value="my.imap.server.com" />
         <env name="IMAP_SERVER_PORT" value="60993" />
@@ -306,4 +276,4 @@ these environment variables in it:
 </phpunit>
 ```
 
-**WARNING** Tests create new mailboxes without removing them.
+**WARNING**: currently the tests create new mailboxes without removing them.
