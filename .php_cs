@@ -30,10 +30,12 @@ return PhpCsFixer\Config::create()
         'phpdoc_order' => true,
         'phpdoc_types_order' => true,
         'semicolon_after_instruction' => true,
+        'silenced_deprecation_error' => false,
         'simplified_null_return' => true,
     ])
     ->setFinder(
         PhpCsFixer\Finder::create()
+            ->in(__DIR__ . '/.travis')
             ->in(__DIR__ . '/src')
             ->in(__DIR__ . '/tests')
     )

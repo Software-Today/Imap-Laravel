@@ -12,6 +12,7 @@ use Ddeboer\Imap\Message\EmailAddress;
 use Ddeboer\Imap\Message\Parameters;
 use Ddeboer\Imap\MessageIterator;
 use Ddeboer\Imap\Search;
+use PHPUnit\Framework\Error\Deprecated;
 use Zend\Mail;
 use Zend\Mime;
 
@@ -69,6 +70,16 @@ final class MessageTest extends AbstractTest
         new Message($connection->getResource(), $messageNumber);
     }
 
+    public function testDeprecateMaskAsSeen()
+    {
+        $this->createTestMessage($this->mailbox, 'Message A');
+        $message = $this->mailbox->getMessage(1);
+
+        $this->expectException(Deprecated::class);
+
+        $message->maskAsSeen();
+    }
+
     public function testAlwaysKeepUnseen()
     {
         $this->createTestMessage($this->mailbox, 'Message A');
@@ -79,7 +90,7 @@ final class MessageTest extends AbstractTest
         $message->getBodyText();
         $this->assertFalse($message->isSeen());
 
-        $message->maskAsSeen();
+        $message->markAsSeen();
         $this->assertTrue($message->isSeen());
     }
 
@@ -493,6 +504,9 @@ final class MessageTest extends AbstractTest
         $this->assertArrayHasKey('date', $headers);
         $this->assertArrayHasKey('recent', $headers);
 
+        $this->assertSame('Wed, 27 Sep 2017 12:48:51 +0200', $headers['date']);
+        $this->assertSame('A_€@{è_Z', $headers['bcc'][0]->personal);
+
         $this->assertFalse($message->isSeen());
     }
 
@@ -657,6 +671,42 @@ final class MessageTest extends AbstractTest
 
         $this->assertSame('MyPlain', \rtrim($message->getBodyText()));
         $this->assertSame('MyHtml', \rtrim($message->getBodyHtml()));
+    }
+
+    public function testGetInReplyTo()
+    {
+        $fixture = $this->getFixture('references');
+        $this->mailbox->addMessage($fixture);
+
+        $message = $this->mailbox->getMessage(1);
+
+        $this->assertCount(1, $message->getInReplyTo());
+        $this->assertContains('<b9e87bd5e661a645ed6e3b832828fcc5@example.com>', $message->getInReplyTo());
+
+        $fixture = $this->getFixture('plain_only');
+        $this->mailbox->addMessage($fixture);
+
+        $message = $this->mailbox->getMessage(2);
+
+        $this->assertCount(0, $message->getInReplyTo());
+    }
+
+    public function testGetReferences()
+    {
+        $fixture = $this->getFixture('references');
+        $this->mailbox->addMessage($fixture);
+
+        $message = $this->mailbox->getMessage(1);
+
+        $this->assertCount(2, $message->getReferences());
+        $this->assertContains('<08F04024-A5B3-4FDE-BF2C-6710DE97D8D9@example.com>', $message->getReferences());
+
+        $fixture = $this->getFixture('plain_only');
+        $this->mailbox->addMessage($fixture);
+
+        $message = $this->mailbox->getMessage(2);
+
+        $this->assertCount(0, $message->getReferences());
     }
 
     public function testInlineAttachment()
